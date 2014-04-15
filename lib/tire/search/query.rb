@@ -48,6 +48,14 @@ module Tire
         @value[:custom_score].update({:query => @custom_score.to_hash})
         @value
       end
+      
+      # as of ES 0.90.4 function_score replaces custom_score, custom_score is deprecated
+      def function_score(options={}, &block)
+        @function_score ||= Query.new(&block)
+        @value[:function_score] = options
+        @value[:function_score].update({:query => @function_score.to_hash})
+        @value
+      end
 
       def constant_score(&block)
         @value.update( { :constant_score => ConstantScoreQuery.new(&block).to_hash } ) if block_given?
