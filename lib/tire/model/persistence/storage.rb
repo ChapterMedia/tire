@@ -61,7 +61,8 @@ module Tire
             return false unless valid?
             run_callbacks :save do
               response = update_index
-              !! response['ok']
+              (!! response['ok']) || # ES < 1.0
+              (!! response['_id'])   # ES > 1.0
             end
           end
 
