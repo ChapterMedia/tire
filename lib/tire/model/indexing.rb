@@ -124,7 +124,12 @@ module Tire
         end
 
         def mapping_to_hash
-          { document_type.to_sym => mapping_options.merge({ :properties => mapping }) }
+                    # Safer mapping
+          # ES 1.2 returns
+          # >> org.elasticsearch.index.mapper.MapperParsingException: Unknown field [as]
+          # when passed tire-specific :as helper
+          safe_mapping = mapping.each_with_object({}){|(k,v),o| o[k] = v.except(:as)}
+          { document_type.to_sym => mapping_options.merge({ :properties => safe_mapping }) }
         end
 
       end
