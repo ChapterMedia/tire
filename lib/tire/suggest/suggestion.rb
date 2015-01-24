@@ -14,6 +14,10 @@ module Tire
         @value[:text] = value
         self
       end
+      
+      def size(value)
+      	@value[:size] = value
+      	self
 
       def completion(value, options={})
         @value[:completion] = {:field => value}.update(options)
