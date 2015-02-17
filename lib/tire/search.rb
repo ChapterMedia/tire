@@ -75,6 +75,12 @@ module Tire
         self
       end
 
+      def aggregation(name, *options)
+        @aggregations ||= {}
+        @aggregations.merge! Aggregation.new(name, *options).to_hash
+        self
+      end
+
       def script_field(name, options={})
         @script_fields ||= {}
         @script_fields.merge! ScriptField.new(name, options).to_hash
@@ -182,6 +188,7 @@ module Tire
           request.update( { :explain => @explain } )         if @explain
           request.update( { :min_score => @min_score } )     if @min_score
           request.update( { :track_scores => @track_scores } ) if @track_scores
+          request.update( { :aggs => @aggregations} ) if @aggregations
           request
         end
       end
