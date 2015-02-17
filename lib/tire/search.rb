@@ -4,7 +4,7 @@ module Tire
 
     class Search
 
-      attr_reader :indices, :types, :query, :facets, :filters, :options, :explain, :script_fields
+      attr_reader :indices, :types, :query, :facets, :filters, :aggregations, :options, :explain, :script_fields
 
       def initialize(indices=nil, options={}, &block)
         if indices.is_a?(Hash)
