@@ -167,11 +167,11 @@ module Tire
         def to_indexed_json
           if instance.class.tire.mapping.empty?
             # Reject the id and type keys
-            instance.to_hash.reject {|key,_| key.to_s == 'id' || key.to_s == 'type' }.to_json
+            instance.to_hash.with_indifferent_access.reject {|key,_| key.to_s == 'id' || key.to_s == 'type' }.to_json
           else
             mapping = instance.class.tire.mapping
             # Reject keys not declared in mapping
-            hash = instance.to_hash.reject { |key, value| ! mapping.keys.map(&:to_s).include?(key.to_s) }
+            hash = instance.to_hash.with_indifferent_access.reject { |key, value| ! mapping.keys.map(&:to_s).include?(key.to_s) }
 
             # Evalute the `:as` options
             mapping.each do |key, options|
