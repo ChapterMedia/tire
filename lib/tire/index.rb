@@ -92,7 +92,7 @@ module Tire
         params[:ignore_conflicts] = ignore_conflicts
       end
 
-      url  = "#{self.url}/#{type}/_mapping"
+      url  = "#{self.url}/_mapping/#{type}"
       url << "?#{params.to_param}" unless params.empty?
 
       payload = { type => mapping }.to_json
