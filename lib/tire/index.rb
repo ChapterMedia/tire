@@ -89,8 +89,7 @@ module Tire
     def put_mapping(type = nil, mapping = nil, fallback_model = nil)
       params = {}
       type = type || get_type_from_document(fallback_model.new) 
-      i_mapping = get_mapping.try(:with_indifferent_access).try(:[], :mappings).try(:[], type) || {}
-      mapping = mapping || (fallback_model.present? ? fallback_model.tire.mapping : nil) || {}
+      mapping = mapping || {properties: ((fallback_model.present? ? fallback_model.tire.mapping : nil) || {})}
       
       mapping = i_mapping.deep_merge(mapping)
       if ignore_conflicts = mapping.delete(:ignore_conflicts) || mapping.delete("ignore_conflicts")
