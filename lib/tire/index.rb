@@ -91,7 +91,6 @@ module Tire
       type = type || get_type_from_document(fallback_model.new) 
       mapping = mapping || {properties: ((fallback_model.present? ? fallback_model.tire.mapping : nil) || {})}
       
-      mapping = i_mapping.deep_merge(mapping)
       if ignore_conflicts = mapping.delete(:ignore_conflicts) || mapping.delete("ignore_conflicts")
         params[:ignore_conflicts] = ignore_conflicts
       end
