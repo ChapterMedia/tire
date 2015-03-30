@@ -88,7 +88,9 @@ module Tire
 
     def put_mapping(type = nil, mapping = nil, fallback_model = nil)
       params = {}
+      doc_type = type || fallback_model.try(:document_type)
       type = type || get_type_from_document(fallback_model.new) 
+      
       mapping = mapping || {properties: ((fallback_model.present? ? fallback_model.tire.mapping : nil) || {})}
       
       if ignore_conflicts = mapping.delete(:ignore_conflicts) || mapping.delete("ignore_conflicts")
@@ -98,7 +100,7 @@ module Tire
       url  = "#{self.url}/_mapping/#{type}"
       url << "?#{params.to_param}" unless params.empty?
 
-      payload = { type => mapping }.to_json
+      payload = { doc_type => mapping }.to_json
 
       @response = Configuration.client.put url, payload
       result = MultiJson.decode(@response.body)
