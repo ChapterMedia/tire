@@ -86,12 +86,13 @@ module Tire
       logged("GET MAPPING", curl)
     end
 
-    def put_mapping(type, mapping)
+    def put_mapping(mapping, type)
       params = {}
       if ignore_conflicts = mapping.delete(:ignore_conflicts) || mapping.delete("ignore_conflicts")
         params[:ignore_conflicts] = ignore_conflicts
       end
 
+      type = type || get_type_from_document(self.new) 
       url  = "#{self.url}/_mapping/#{type}"
       url << "?#{params.to_param}" unless params.empty?
 
