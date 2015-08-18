@@ -166,7 +166,8 @@ module Tire
       true
     end
     
-    def update_replicas(num)
+    def update_replicas(number_of_replicas)
+      raise "Desired number of replicas required" unless number_of_replicas
       update_settings number_of_replicas: number_of_replicas
     end
     # Performs a [bulk](http://www.elasticsearch.org/guide/reference/api/bulk.html) request
