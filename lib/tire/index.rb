@@ -155,6 +155,20 @@ module Tire
       logged([type, id].join('/'), curl)
     end
 
+    def update_settings(settings)
+      url, body = "#{self.url}/_settings", MultiJson.encode(settings)
+      begin
+        @response = Configuration.client.put url, body
+        raise RuntimeError, "#{@response.code} > #{@response.body}" if @response.failure?
+      ensure
+        curl = %Q|curl -X PUT "#{url}" -d '#{body}'|
+      end
+      true
+    end
+    
+    def update_replicas(num)
+      update_settings number_of_replicas: number_of_replicas
+    end
     # Performs a [bulk](http://www.elasticsearch.org/guide/reference/api/bulk.html) request
     #
     #     @myindex.bulk :index, [ {id: 1, title: 'One'}, { id: 2, title: 'Two', _version: 3 } ], refresh: true
