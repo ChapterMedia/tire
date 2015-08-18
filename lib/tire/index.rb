@@ -170,6 +170,22 @@ module Tire
       raise "Desired number of replicas required" unless number_of_replicas
       update_settings number_of_replicas: number_of_replicas
     end
+    
+    def index_stats(mode: :max)
+      url= "#{self.url}/_stats"
+      begin
+        @response = Configuration.client.get url
+        raise RuntimeError, "#{@response.code} > #{@response.body}" if @response.failure?
+      end
+      begin
+        response = JSON.parse(@response.body)
+        (mode == :min) ? ({documents: response["_all"]["primaries"]["docs"]["count"], size: response["_all"]["primaries"]["store"]})
+          : response
+      rescue  => ex
+        # puts "Error: #{ex}"
+        @response
+      end
+    end
     # Performs a [bulk](http://www.elasticsearch.org/guide/reference/api/bulk.html) request
     #
     #     @myindex.bulk :index, [ {id: 1, title: 'One'}, { id: 2, title: 'Two', _version: 3 } ], refresh: true
