@@ -171,7 +171,7 @@ module Tire
       update_settings number_of_replicas: number_of_replicas
     end
     
-    def index_stats(mode: :max)
+    def stats(mode: :max)
       url= "#{self.url}/_stats"
       begin
         @response = Configuration.client.get url
