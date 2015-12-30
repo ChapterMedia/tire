@@ -4,7 +4,7 @@ module Tire
 
     class Search
 
-      attr_reader :indices, :types, :query, :facets, :filters, :aggregations, :options, :explain, :script_fields
+      attr_reader :indices, :types, :query, :facets, :filters, :options, :explain, :script_fields, :aggregations
 
       def initialize(indices=nil, options={}, &block)
         if indices.is_a?(Hash)
@@ -63,9 +63,23 @@ module Tire
         self
       end
 
+      def source(string_or_array=nil,&block)
+        if string_or_array != nil #false is a legitimate value
+          @source = string_or_array
+        else
+          @source = Source.new(&block).to_hash
+        end
+      end
+
       def facet(name, options={}, &block)
         @facets ||= {}
         @facets.update Facet.new(name, options, &block).to_hash
+        self
+      end
+
+      def aggregate(name, type, body={}, &block)
+        @aggregations ||= {}
+        @aggregations.update Aggregation.new(name, type, body, &block).to_hash
         self
       end
 
@@ -119,14 +133,14 @@ module Tire
         self
       end
 
-      def _source(*fields)
-        @_source = Array(fields.flatten)
-        self
-      end
-
-      def partial_field(name, options)
-        @partial_fields ||= {}
-        @partial_fields[name] = options
+      def partial_field(string_or_array=nil,&block)
+        if string_or_array
+          @partial_fields = PartialField.new do
+            include *string_or_array
+          end.to_hash
+        else
+          @partial_fields = PartialField.new(&block).to_hash
+        end
       end
 
       def explain(value)
@@ -174,14 +188,15 @@ module Tire
           request.update( { :query  => @query.to_hash } )    if @query
           request.update( { :sort   => @sort.to_ary   } )    if @sort
           request.update( { :facets => @facets.to_hash } )   if @facets
-          request.update( { :filter => @filters.first.to_hash } ) if @filters && @filters.size == 1
-          request.update( { :filter => { :and => @filters.map {|filter| filter.to_hash} } } ) if  @filters && @filters.size > 1
+          request.update( { :aggregations => @aggregations.to_hash } )   if @aggregations
+          request.update( { :post_filter => @filters.first.to_hash } ) if @filters && @filters.size == 1
+          request.update( { :post_filter => { :and => @filters.map {|filter| filter.to_hash} } } ) if  @filters && @filters.size > 1
           request.update( { :highlight => @highlight.to_hash } ) if @highlight
           request.update( { :suggest => @suggest.to_hash } ) if @suggest
           request.update( { :size => @size } )               if @size
           request.update( { :from => @from } )               if @from
           request.update( { :fields => @fields } )           if @fields
-          request.update( { :_source => @_source } )           if @_source
+          request.update( { :_source => @source } )           if defined?(@source)
           request.update( { :partial_fields => @partial_fields } ) if @partial_fields
           request.update( { :script_fields => @script_fields } ) if @script_fields
           request.update( { :version => @version } )         if @version

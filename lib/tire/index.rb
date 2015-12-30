@@ -34,7 +34,7 @@ module Tire
 
     def create(options={})
       @options = options
-      @response = Configuration.client.post url, MultiJson.encode(options)
+      @response = Configuration.client.put url, MultiJson.encode(options)
       @response.success? ? @response : false
 
     ensure
@@ -96,7 +96,7 @@ module Tire
       if ignore_conflicts = mapping.delete(:ignore_conflicts) || mapping.delete("ignore_conflicts")
         params[:ignore_conflicts] = ignore_conflicts
       end
-      
+
       url  = "#{self.url}/_mapping/#{type}"
       url << "?#{params.to_param}" unless params.empty?
 
@@ -111,7 +111,7 @@ module Tire
     end
 
     def delete_mapping(type)
-      url = "#{self.url}/#{type}"
+      url = "#{self.url}/_mapping/#{type}"
       @response = Configuration.client.delete(url)
       @response.success?
     ensure
@@ -242,6 +242,10 @@ module Tire
           # Normalize Ruby 1.8 and Ruby 1.9 Hash#select behaviour
           meta = Hash[meta] unless meta.is_a?(Hash)
 
+          meta.each do |k, _|
+            doc_hash.delete k #don't leave them hanging around in the document
+          end
+          doc_hash.delete :_type
           # meta = SUPPORTED_META_PARAMS_FOR_BULK.inject({}) { |hash, param|
           #   value = doc_hash.delete(param)
           #   hash[param] = value unless !value || value.empty?
@@ -388,6 +392,8 @@ module Tire
       params    = {}
       params[:routing]    = options[:routing] if options[:routing]
       params[:fields]     = options[:fields]  if options[:fields]
+      params[:_source_exclude]     = options[:source_exclude]  if options[:source_exclude]
+      params[:_source_include]     = options[:source_include]  if options[:source_include]
       params[:preference] = options[:preference] if options[:preference]
       params_encoded      = params.empty? ? '' : "?#{params.to_param}"
 
@@ -404,6 +410,7 @@ module Tire
       else
         document = h['_source'] || h['fields'] || {}
         document.update('id' => h['_id'], '_type' => h['_type'], '_index' => h['_index'], '_version' => h['_version'])
+        document['_parent'] = h['_parent'] if h['_parent'] #ES 2 returns meta data at the top level, not inside fields / _source 
         wrapper.new(document)
       end
 

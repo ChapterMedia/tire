@@ -43,6 +43,7 @@ module Tire
       end
 
       def custom_score(options={}, &block)
+        raise "custom score query has been removed"
         @custom_score ||= Query.new(&block)
         @value[:custom_score] = options
         @value[:custom_score].update({:query => @custom_score.to_hash})
@@ -109,6 +110,13 @@ module Tire
         @boosting ||= BoostingQuery.new(options)
         block.arity < 1 ? @boosting.instance_eval(&block) : block.call(@boosting) if block_given?
         @value[:boosting] = @boosting.to_hash
+        @value
+      end
+
+      def function_score(options={}, &block)
+        function_score_query = FunctionScoreQuery.new(options)
+        block.arity < 1 ? function_score_query.instance_eval(&block) : block.call(function_score_query) if block_given?
+        @value[:function_score] = function_score_query.to_hash
         @value
       end
 
@@ -279,5 +287,51 @@ module Tire
       end
     end
 
+    class FunctionScoreQuery
+      def initialize(options={})
+        @value = options.dup
+      end
+
+      def to_hash
+        @value
+      end
+
+      def filter(type, *options)
+        check_for_presence_of :query
+        @value[:filter]||={}
+        @value[:filter][:and] ||= []
+        @value[:filter][:and] << Filter.new(type, *options).to_hash
+        @value
+      end
+
+      def query &block
+        check_for_presence_of :filter
+        @value[:query] = Query.new(&block).to_hash
+        @value
+      end
+
+      def script_score(script, lang:nil, params: {}, options:{})
+        @value[:functions]||= []
+        @value[:functions] << options.merge(:script_score => {script: script, lang:lang, params:params}.reject {|k,v| v.blank?})
+      end
+
+      def boost_factor(value, options)
+        @value[:functions]||= []
+        @value[:functions] << options.merge(:weight => value)
+      end
+
+      def field_value_factor(field, function_options:{}, field_options:{})
+        @value[:functions]||=[]
+        @value[:functions] << {field_value_factor: {field: field}.merge(field_options)}.merge(function_options)
+      end
+
+      protected
+
+      def check_for_presence_of key
+        if @value[key]
+          raise "Function score query does not support query and filter #{caller.join(';')}"
+        end
+      end
+    end
   end
 end

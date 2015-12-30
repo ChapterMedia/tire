@@ -22,7 +22,7 @@ module Tire
       def results
         return [] if failure?
         @results ||= begin
-          hits = @response['hits']['hits'].map { |d| d.update '_type' => Utils.unescape(d['_type']) }
+          hits = @response['hits']['hits'].map { |d| d.update '_type'.freeze => Utils.unescape(d['_type'.freeze]) }
           unless @options[:load]
             __get_results_without_load(hits)
           else
@@ -83,40 +83,44 @@ module Tire
       #
       def __parse_fields__(fields={})
         ( fields ||= {} ).clone.each_pair do |key,value|
-          next unless key.to_s =~ /_source/                 # Skip regular JSON immediately
+          next unless key.start_with?('_source'.freeze)                 # Skip regular JSON immediately
+          keys = key.split('.')
+          keys.shift
 
-          keys = key.to_s.split('.').reject { |n| n == '_source' }
           fields.delete(key)
 
           result = {}
-          path = []
-
+          stack = result
+          *keys, last_key = keys
           keys.each do |name|
-            path << name
-            eval "result[:#{path.join('][:')}] ||= {}"
-            eval "result[:#{path.join('][:')}] = #{value.inspect}" if keys.last == name
+            stack = (stack[name] ||= {})
           end
+          stack[last_key] = value
           fields.update result
         end
         fields
       end
 
+
       def __get_results_without_load(hits)
         if @wrapper == Hash
           hits
         else
+          _source = '_source'.freeze
           hits.map do |h|
             document = {}
 
             # Update the document with fields and/or source
-            document.update h['_source'] if h['_source']
-            document.update __parse_fields__(h['fields']) if h['fields']
-
+            document.update h[_source] if h[_source]
+            fields = h['fields'.freeze]
+            if fields
+              document.update __parse_fields__(fields)
+            end
             # Set document ID
-            document['id'] = h['_id']
+            document['id'.freeze] = h['_id'.freeze]
 
             # Update the document with meta information
-            ['_score', '_type', '_index', '_version', 'sort', 'highlight', '_explanation'].each do |key|
+            ['_score'.freeze, '_type'.freeze, '_index'.freeze, '_version'.freeze, 'sort'.freeze, 'highlight'.freeze, '_explanation'.freeze].each do |key|
               document.update key => h[key]
             end
 
@@ -148,14 +152,15 @@ module Tire
 
         # Reorder records to preserve the order from search results
         @response['hits']['hits'].map do |item|
-          records[item['_type']].detect do |record|
-            record.id.to_s == item['_id'].to_s
+          records[item['_type'.freeze]].detect do |record|
+            record.id.to_s == item['_id'.freeze].to_s
           end
         end
       end
 
       def __find_records_by_ids(klass, ids)
-        @options[:load] === true ? klass.find(ids) : klass.find(ids, @options[:load])
+        scope = @options[:load] === true ? klass.where(:id => ids) : klass.where(:id => ids).includes(@options[:load][:include])
+        scope.to_a
       end
     end
 
