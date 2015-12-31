@@ -125,13 +125,19 @@ module Tire
           yield if block_given?
         end
 
-        def mapping_to_hash
+        def mapping_to_hash(banned_parameters: nil)
           # Safer mapping
           # ES 1.2.x returns
           # >> org.elasticsearch.index.mapper.MapperParsingException: Unknown field [as]
           # when passed tire-specific :as key
-          safe_mapping = mapping.each_with_object({}){|(k,v),o| o[k] = v.except(:as, :facet_generator, :wildcard_sort, :secondary_sort)}
+          # ES 2.x.x returns
+          # mapper_parsing_exception
+          # Failed to parse mapping
+          # Mapping definition for [..x..] has unsupported parameters: [as: ... ]
           
+          banned_parameters ||= [:as, :facet_generator, :wildcard_sort, :secondary_sort, :facet_statistics]
+          safe_mapping = mapping.each_with_object({}){|(k,v),o| o[k] = v.except(*banned_parameters)}
+
           { document_type.to_sym => mapping_options.merge({ :properties => safe_mapping }) }
         end
 
