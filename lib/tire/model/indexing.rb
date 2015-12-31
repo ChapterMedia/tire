@@ -130,7 +130,8 @@ module Tire
           # ES 1.2.x returns
           # >> org.elasticsearch.index.mapper.MapperParsingException: Unknown field [as]
           # when passed tire-specific :as key
-          safe_mapping = mapping.each_with_object({}){|(k,v),o| o[k] = v.except(:as)}
+          safe_mapping = mapping.each_with_object({}){|(k,v),o| o[k] = v.except(:as, :facet_generator, :wildcard_sort, :secondary_sort)}
+          
           { document_type.to_sym => mapping_options.merge({ :properties => safe_mapping }) }
         end
 
