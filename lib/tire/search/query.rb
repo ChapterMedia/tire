@@ -49,14 +49,6 @@ module Tire
         @value[:custom_score].update({:query => @custom_score.to_hash})
         @value
       end
-      
-      # as of ES 0.90.4 function_score replaces custom_score, custom_score is deprecated
-      def function_score(options={}, &block)
-        @function_score ||= Query.new(&block)
-        @value[:function_score] = options
-        @value[:function_score].update({:query => @function_score.to_hash})
-        @value
-      end
 
       def constant_score(&block)
         @value.update( { :constant_score => ConstantScoreQuery.new(&block).to_hash } ) if block_given?
@@ -113,12 +105,23 @@ module Tire
         @value
       end
 
+      # @TODO, standardise access to function score
+      # CM branch, uses hash
+      # as of ES 0.90.4 function_score replaces custom_score, custom_score is deprecated
       def function_score(options={}, &block)
-        function_score_query = FunctionScoreQuery.new(options)
-        block.arity < 1 ? function_score_query.instance_eval(&block) : block.call(function_score_query) if block_given?
-        @value[:function_score] = function_score_query.to_hash
+        @function_score ||= Query.new(&block)
+        @value[:function_score] = options
+        @value[:function_score].update({:query => @function_score.to_hash})
         @value
       end
+
+      # CHEUNG tire branch, uses FunctionScoreQuery
+      # def function_score(options={}, &block)
+      #   function_score_query = FunctionScoreQuery.new(options)
+      #   block.arity < 1 ? function_score_query.instance_eval(&block) : block.call(function_score_query) if block_given?
+      #   @value[:function_score] = function_score_query.to_hash
+      #   @value
+      # end
 
       def to_hash
         @value
