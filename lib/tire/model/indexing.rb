@@ -135,7 +135,7 @@ module Tire
           # Failed to parse mapping
           # Mapping definition for [..x..] has unsupported parameters: [as: ... ]
           
-          banned_parameters ||= [:as, :facet_generator, :wildcard_sort, :secondary_sort, :facet_statistics]
+          banned_parameters ||= [:as, :default, :facet_generator, :wildcard_sort, :secondary_sort, :facet_statistics]
           safe_mapping = mapping.each_with_object({}){|(k,v),o| o[k] = v.except(*banned_parameters)}
 
           { document_type.to_sym => mapping_options.merge({ :properties => safe_mapping }) }
